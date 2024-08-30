@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlmodel
+requests
+beautifulsoup4
+pyjwt
+python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
