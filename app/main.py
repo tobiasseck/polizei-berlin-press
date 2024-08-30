@@ -1,9 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlmodel import Session
 from datetime import timedelta
+import logging
+from io import StringIO
 
 from models import User, PoliceReport, create_db_and_tables, get_session
 from auth import Token, authenticate_user, create_access_token, get_current_active_user, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -11,7 +13,10 @@ from controller import PoliceReportController
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+log_stream = StringIO()
+logging.basicConfig(level=logging.INFO, stream=log_stream, format='%(asctime)s - %(levelname)s - %(message)s')
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 def on_startup():
@@ -19,17 +24,17 @@ def on_startup():
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
-    with open("app/static/index.html", "r") as file:
+    with open("static/index.html", "r") as file:
         return file.read()
 
 @app.get("/login", response_class=HTMLResponse)
 async def read_login():
-    with open("app/static/login.html", "r") as file:
+    with open("static/login.html", "r") as file:
         return file.read()
 
 @app.get("/browse", response_class=HTMLResponse)
 async def read_browse():
-    with open("app/static/browse.html", "r") as file:
+    with open("static/browse.html", "r") as file:
         return file.read()
 
 @app.post("/token", response_model=Token)
@@ -53,14 +58,27 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 
 @app.post("/trigger-scraping")
 async def trigger_scraping(current_user: User = Depends(get_current_active_user), session: Session = Depends(get_session)):
+    logging.info("Triggering scraping process")
     controller = PoliceReportController(session)
-    controller.run_scraper()
-    return {"message": "Scraping completed successfully"}
+    try:
+        controller.run_scraper()
+        log_output = log_stream.getvalue()
+        return JSONResponse(content={"message": "Scraping completed", "logs": log_output}, status_code=200)
+    except Exception as e:
+        logging.error(f"Error during scraping: {str(e)}")
+        log_output = log_stream.getvalue()
+        return JSONResponse(content={"error": f"Scraping failed: {str(e)}", "logs": log_output}, status_code=500)
 
 @app.get("/reports", response_model=list[PoliceReport])
 async def get_reports(current_user: User = Depends(get_current_active_user), session: Session = Depends(get_session)):
+    logging.info("Fetching all reports")
     controller = PoliceReportController(session)
-    return controller.get_all_reports()
+    try:
+        reports = controller.get_all_reports()
+        return reports
+    except Exception as e:
+        logging.error(f"Error fetching reports: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching reports: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

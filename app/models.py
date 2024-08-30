@@ -1,6 +1,7 @@
 from typing import Optional
 from datetime import datetime
 from sqlmodel import Field, Session, SQLModel, create_engine
+from sqlalchemy import Column, Text
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -12,7 +13,7 @@ class PoliceReport(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     date: datetime
     title: str
-    content: str
+    content: str = Field(sa_column=Column(Text))
     location: str
     url: str = Field(unique=True)
 
