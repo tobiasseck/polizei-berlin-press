@@ -78,7 +78,14 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
+                                    <p><strong>Date:</strong> ${new Date(report.date).toLocaleString()}</p>
+                                    <p><strong>Location:</strong> ${report.location}</p>
+                                    <hr>
                                     <p>${report.content}</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="${report.url}" target="_blank" class="btn btn-primary">View Original</a>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                 </div>
                             </div>
                         </div>
