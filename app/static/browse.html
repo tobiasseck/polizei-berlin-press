@@ -56,11 +56,27 @@
                 reports.forEach(report => {
                     const reportDiv = document.createElement('div');
                     reportDiv.className = 'card mb-3';
+
+                    const nrMatch = report.content.match(/(Nr\. \d+)/);
+                    let formattedContent = report.content;
+
+                    if (nrMatch) {
+                        const nrText = nrMatch[0];
+                        const beforeNr = report.content.substring(0, nrMatch.index).trim();
+                        const afterNr = report.content.substring(nrMatch.index + nrText.length).trim();
+
+                        formattedContent = `<strong style="color: gray;">${nrText}</strong>`;
+                        if (beforeNr) {
+                            formattedContent += `<br><strong>${beforeNr}</strong>`;
+                        }
+                        formattedContent += `<br>${afterNr}`;
+                    }
+
                     reportDiv.innerHTML = `
                         <div class="card-body">
                             <h5 class="card-title">${report.title}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">${new Date(report.date).toLocaleString()} - ${report.location}</h6>
-                            <p class="card-text">${report.content.substring(0, 200)}...</p>
+                            <p class="card-text">${formattedContent.substring(0, 200)}...</p>
                             <a href="#" class="card-link" data-bs-toggle="modal" data-bs-target="#reportModal${report.id}">Read more</a>
                         </div>
                     `;
@@ -81,7 +97,7 @@
                                     <p><strong>Date:</strong> ${new Date(report.date).toLocaleString()}</p>
                                     <p><strong>Location:</strong> ${report.location}</p>
                                     <hr>
-                                    <p>${report.content}</p>
+                                    <p>${formattedContent}</p>
                                 </div>
                                 <div class="modal-footer">
                                     <a href="${report.url}" target="_blank" class="btn btn-primary">View Original</a>
